@@ -35,6 +35,7 @@ public class TurnSystem
 
         turn.IsMyTurn = false;
         turn.TurnState = TurnState.None;
+        Debug.Log(turn.gameObject.name + " turn start");
     }
 
     public void OnUpdate()
@@ -45,7 +46,7 @@ public class TurnSystem
 
             if (!turn.gameObject.activeSelf) continue;
 
-            turn.IsMyTurn = true;
+            // turn.IsMyTurn = true;
         }
     }
 

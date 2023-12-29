@@ -21,8 +21,6 @@ public class DeckSystem
             deck.CardList[i].CostPoint = Random.Range(1, 3);
             deck.CardList[i].AttackPoint = Random.Range(1, 3);
             deck.CardList[i].Description = deck.CardList[i].AttackPoint + "Damage";
-
-            Debug.Log(deck.CardList[i].Title + "をデッキに追加");
         }
 
         // 整数 n の初期値はデッキの枚数

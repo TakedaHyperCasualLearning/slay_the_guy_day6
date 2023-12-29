@@ -7,7 +7,6 @@ public class StartTurnSystem
 {
     private GameObject playerObject;
     private List<TurnComponent> turnList = new List<TurnComponent>();
-    private List<CharacterBaseComponent> characterBaseList = new List<CharacterBaseComponent>();
 
     public StartTurnSystem(GameEvent gameEvent, GameObject player)
     {
@@ -29,36 +28,38 @@ public class StartTurnSystem
             if (turn.gameObject == playerObject)
             {
                 turn.TurnState = TurnState.Draw;
-                characterBaseList[i].ManaPoint = characterBaseList[i].ManaPointMax;
+                CharacterBaseComponent characterBase = playerObject.GetComponent<CharacterBaseComponent>();
+                characterBase.ManaPoint = characterBase.ManaPointMax;
                 Debug.Log(turn.gameObject.name + "Draw phase");
                 continue;
             }
 
-            turn.TurnState = TurnState.Play;
-            Debug.Log(turn.gameObject.name + "Battle phase");
+            List<EnemyTurnComponent> enemyTurnList = turn.gameObject.GetComponent<EnemyTurnManagerComponent>().EnemyTurnComponentList;
+            for (int j = 0; j < enemyTurnList.Count; j++)
+            {
+                EnemyTurnComponent enemyTurn = enemyTurnList[j];
+                if (!enemyTurn.IsPhaseStart) continue;
 
+                enemyTurn.IsPhaseEnd = true;
+            }
         }
     }
 
     private void AddComponentList(GameObject gameObject)
     {
         TurnComponent turn = gameObject.GetComponent<TurnComponent>();
-        CharacterBaseComponent characterBase = gameObject.GetComponent<CharacterBaseComponent>();
 
-        if (turn == null || characterBase == null) return;
+        if (turn == null) return;
 
         turnList.Add(turn);
-        characterBaseList.Add(characterBase);
     }
 
     private void RemoveComponentList(GameObject gameObject)
     {
         TurnComponent turn = gameObject.GetComponent<TurnComponent>();
-        CharacterBaseComponent characterBase = gameObject.GetComponent<CharacterBaseComponent>();
 
-        if (turn == null || characterBase == null) return;
+        if (turn == null) return;
 
         turnList.Remove(turn);
-        characterBaseList.Remove(characterBase);
     }
 }

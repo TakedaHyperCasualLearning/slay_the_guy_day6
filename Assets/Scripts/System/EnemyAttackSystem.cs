@@ -9,15 +9,17 @@ public class EnemyAttackSystem
     private GameEvent gameEvent;
     private GameObject playerObject = null;
     private ObjectPool objectPool;
+    private GameObject enemyTurnManagerObject;
     private List<CharacterBaseComponent> characterBaseLis = new List<CharacterBaseComponent>();
-    private List<TurnComponent> turnList = new List<TurnComponent>();
+    private List<EnemyTurnComponent> turnList = new List<EnemyTurnComponent>();
     private List<EnemyAttackComponent> enemyAttackList = new List<EnemyAttackComponent>();
 
-    public EnemyAttackSystem(GameEvent gameEvent, ObjectPool objectPool, GameObject player)
+    public EnemyAttackSystem(GameEvent gameEvent, ObjectPool objectPool, GameObject player, GameObject enemyTurnManager)
     {
         this.gameEvent = gameEvent;
         this.objectPool = objectPool;
         playerObject = player;
+        enemyTurnManagerObject = enemyTurnManager;
         gameEvent.AddComponentList += AddComponentList;
         gameEvent.RemoveComponentList += RemoveComponentList;
     }
@@ -26,9 +28,8 @@ public class EnemyAttackSystem
     {
         for (int i = 0; i < turnList.Count; i++)
         {
-            TurnComponent turn = turnList[i];
+            EnemyTurnComponent turn = turnList[i];
             CharacterBaseComponent characterBase = characterBaseLis[i];
-
 
             if (enemyAttackList[i].ShieldEffectList.Count > 0)
             {
@@ -50,7 +51,11 @@ public class EnemyAttackSystem
 
             if (!turn.gameObject.activeSelf) continue;
 
-            if (!turn.IsMyTurn || turn.TurnState != TurnState.Play) continue;
+            TurnComponent turnComponent = enemyTurnManagerObject.gameObject.GetComponent<TurnComponent>();
+
+            if (!turnComponent.IsMyTurn || turnComponent.TurnState != TurnState.Play) continue;
+
+            if (!turn.IsPhaseStart || turn.IsPhaseEnd) continue;
 
             int rand = Random.Range(0, 2);
 
@@ -67,8 +72,7 @@ public class EnemyAttackSystem
                 GenerateShieldEffect(enemyAttackList[i]);
             }
 
-            turn.TurnState = TurnState.End;
-            gameEvent.TurnEnd?.Invoke(turn.gameObject);
+            turn.IsPhaseEnd = true;
         }
     }
 
@@ -106,27 +110,27 @@ public class EnemyAttackSystem
 
     private void AddComponentList(GameObject gameObject)
     {
-        TurnComponent turn = gameObject.GetComponent<TurnComponent>();
         CharacterBaseComponent characterBase = gameObject.GetComponent<CharacterBaseComponent>();
+        EnemyTurnComponent turn = gameObject.GetComponent<EnemyTurnComponent>();
         EnemyAttackComponent enemyAttack = gameObject.GetComponent<EnemyAttackComponent>();
 
-        if (turn == null || characterBase == null || enemyAttack == null) return;
+        if (characterBase == null || turn == null || enemyAttack == null) return;
 
-        turnList.Add(turn);
         characterBaseLis.Add(characterBase);
+        turnList.Add(turn);
         enemyAttackList.Add(enemyAttack);
     }
 
     private void RemoveComponentList(GameObject gameObject)
     {
-        TurnComponent turn = gameObject.GetComponent<TurnComponent>();
         CharacterBaseComponent characterBase = gameObject.GetComponent<CharacterBaseComponent>();
+        EnemyTurnComponent turn = gameObject.GetComponent<EnemyTurnComponent>();
         EnemyAttackComponent enemyAttack = gameObject.GetComponent<EnemyAttackComponent>();
 
-        if (turn == null || characterBase == null || enemyAttack == null) return;
+        if (characterBase == null || turn == null || enemyAttack == null) return;
 
-        turnList.Remove(turn);
         characterBaseLis.Remove(characterBase);
+        turnList.Remove(turn);
         enemyAttackList.Remove(enemyAttack);
     }
 }

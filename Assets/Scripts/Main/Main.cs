@@ -6,10 +6,12 @@ public class Main : MonoBehaviour
 {
     [SerializeField] GameObject player;
     [SerializeField] GameObject enemy;
+    [SerializeField] GameObject enemy2;
     [SerializeField] GameObject deck;
     [SerializeField] GameObject hands;
     [SerializeField] GameObject trash;
     [SerializeField] GameObject effectRoot;
+    [SerializeField] GameObject enemyTurnManager;
 
     private GameEvent gameEvent;
     private ObjectPool objectPool;
@@ -30,6 +32,7 @@ public class Main : MonoBehaviour
     private StartTurnSystem startTurnSystem;
     private EnemyAttackSystem enemyAttackSystem;
     private TurnEndSystem turnEndSystem;
+    private EnemyTurnManagerSystem enemyTurnManagerSystem;
 
     void Start()
     {
@@ -39,7 +42,7 @@ public class Main : MonoBehaviour
 
         damageSystem = new DamageSystem(gameEvent, objectPool, movement);
         // カード
-        cardSelectSystem = new CardSelectSystem(gameEvent, movement, objectPool, player, enemy, trash.transform, effectRoot);
+        cardSelectSystem = new CardSelectSystem(gameEvent, movement, objectPool, player, enemy, trash.transform, effectRoot, enemyTurnManager);
         deckSystem = new DeckSystem(gameEvent);
         drawSystem = new DrawSystem(gameEvent);
         handsSystem = new HandsSystem(gameEvent, objectPool, player, deck.transform);
@@ -50,13 +53,16 @@ public class Main : MonoBehaviour
         // turn
         turnSystem = new TurnSystem(gameEvent, player);
         startTurnSystem = new StartTurnSystem(gameEvent, player);
-        enemyAttackSystem = new EnemyAttackSystem(gameEvent, objectPool, player);
-        turnEndSystem = new TurnEndSystem(gameEvent);
+        enemyAttackSystem = new EnemyAttackSystem(gameEvent, objectPool, player, enemyTurnManager);
+        turnEndSystem = new TurnEndSystem(gameEvent, enemyTurnManager);
+        enemyTurnManagerSystem = new EnemyTurnManagerSystem(gameEvent);
 
         gameEvent.AddComponentList?.Invoke(player);
         gameEvent.AddComponentList?.Invoke(enemy);
+        gameEvent.AddComponentList?.Invoke(enemy2);
         gameEvent.AddComponentList?.Invoke(deck);
         gameEvent.AddComponentList?.Invoke(hands);
+        gameEvent.AddComponentList?.Invoke(enemyTurnManager);
     }
 
     void Update()
@@ -73,5 +79,7 @@ public class Main : MonoBehaviour
         turnSystem.OnUpdate();
         startTurnSystem.OnUpdate();
         enemyAttackSystem.OnUpdate();
+        enemyTurnManagerSystem.OnUpdate();
+        turnEndSystem.OnUpdate();
     }
 }

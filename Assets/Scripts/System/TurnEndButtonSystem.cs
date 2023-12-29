@@ -21,7 +21,6 @@ public class TurnEndButtonSystem
 
     private void OnClickTurnEndButton(TurnEndButtonComponent turnEndButton)
     {
-        Debug.Log("Turn end");
         gameEvent.TurnEnd?.Invoke(turnEndButton.gameObject);
     }
 

@@ -57,11 +57,9 @@ public class HandsSystem
             if (hands.DrawEffectTimer < hands.DrawEffectLimitTime) continue;
             if (hands.CardList.Count > 0 && hands.CardList.Count >= hands.NowHandsCardCount)
             {
-                Debug.Log("count : " + hands.DrawCount);
 
                 Debug.Log(hands.CardList[hands.DrawCount].gameObject.name);
                 gameEvent.ReleaseObject(hands.CardList[hands.DrawCount].gameObject);
-                Debug.Log("Release : " + hands.CardList[hands.DrawCount].gameObject.name);
             }
             DrawCard(hands);
             hands.DrawCount++;
@@ -89,7 +87,6 @@ public class HandsSystem
             if (objectPool.IsNewCreate)
             {
                 hands.CardList.Add(card);
-                Debug.Log("Create : " + hands.CardList.Count);
                 gameEvent.AddComponentList?.Invoke(card.gameObject);
                 objectPool.IsNewCreate = false;
             }
