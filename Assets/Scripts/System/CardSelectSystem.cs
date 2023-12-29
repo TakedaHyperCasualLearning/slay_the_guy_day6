@@ -12,11 +12,12 @@ public class CardSelectSystem
     private Movement movement;
     private ObjectPool objectPool;
     private Transform trashTransform;
+    private GameObject effectRoot;
     private List<CardSelectComponent> cardSelectList = new List<CardSelectComponent>();
     private List<CardBaseComponent> cardBaseList = new List<CardBaseComponent>();
     private int picUpCardIndex = -1;
 
-    public CardSelectSystem(GameEvent gameEvent, Movement movement, ObjectPool objectPool, GameObject player, GameObject enemy, Transform trash)
+    public CardSelectSystem(GameEvent gameEvent, Movement movement, ObjectPool objectPool, GameObject player, GameObject enemy, Transform trash, GameObject effectRoot)
     {
         this.gameEvent = gameEvent;
         this.movement = movement;
@@ -24,13 +25,14 @@ public class CardSelectSystem
         this.playerObject = player;
         this.enemyObject = enemy;
         this.trashTransform = trash;
+        this.effectRoot = effectRoot;
         gameEvent.AddComponentList += AddComponentList;
         gameEvent.RemoveComponentList += RemoveComponentList;
     }
 
     private void Initialize(CardSelectComponent cardSelect)
     {
-        cardSelect.BasePosition = cardSelect.GetComponent<RectTransform>().anchoredPosition;
+        // cardSelect.BasePosition = cardSelect.GetComponent<DrawEffectComponent>().EndPosition;
     }
 
     public void OnUpdate()
@@ -79,10 +81,12 @@ public class CardSelectSystem
             else
             {
                 rectTransform.anchoredPosition = cardSelect.BasePosition;
+                rectTransform.rotation = cardSelect.BaseRotation;
             }
 
             if (picUpCardIndex != i) continue;
             rectTransform.anchoredPosition = Input.mousePosition - new Vector3(Screen.width / 2, Screen.height / 2, 0);
+            rectTransform.rotation = Quaternion.identity;
             cardSelect.LiftPosition = rectTransform.anchoredPosition;
 
             if (!Input.GetMouseButtonUp(0)) continue;
@@ -153,7 +157,7 @@ public class CardSelectSystem
     {
         cardSelect.AttackEffect = objectPool.GetGameObject(cardSelect.AttackEffectPrefab);
         cardSelect.AttackEffect.SetActive(true);
-        cardSelect.AttackEffect.transform.SetParent(cardSelect.EffectRoot.transform);
+        cardSelect.AttackEffect.transform.SetParent(effectRoot.transform);
         Vector3 tempPos = cardSelect.transform.position + new Vector3(0, 0, 5);
         tempPos = Camera.main.ScreenToWorldPoint(new Vector3(tempPos.x, tempPos.y, 0.1f));
         cardSelect.AttackEffect.transform.position = new Vector3(tempPos.x, tempPos.y, 0);

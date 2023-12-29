@@ -51,5 +51,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "slay_the_guy_day5.sln"
+    "dotnet.defaultSolution": "slay_the_guy_day6.sln"
 }

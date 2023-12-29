@@ -28,13 +28,13 @@ public class ObjectPool
                 }
             }
 
-            GameObject newGameObject = GameObject.Instantiate(prefab);
+            GameObject newGameObject = GameObject.Instantiate(prefab, Vector3.zero, Quaternion.identity);
             gameObjectList.Add(newGameObject);
             isNewCreate = true;
             return newGameObject;
         }
 
-        GameObject newGameObject2 = GameObject.Instantiate(prefab);
+        GameObject newGameObject2 = GameObject.Instantiate(prefab, Vector3.zero, Quaternion.identity);
         List<GameObject> newGameObjectList = new List<GameObject>();
         newGameObjectList.Add(newGameObject2);
         objectPool.Add(hashCode, newGameObjectList);

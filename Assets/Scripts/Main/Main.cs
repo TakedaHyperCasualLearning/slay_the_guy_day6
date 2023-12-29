@@ -9,6 +9,7 @@ public class Main : MonoBehaviour
     [SerializeField] GameObject deck;
     [SerializeField] GameObject hands;
     [SerializeField] GameObject trash;
+    [SerializeField] GameObject effectRoot;
 
     private GameEvent gameEvent;
     private ObjectPool objectPool;
@@ -38,10 +39,10 @@ public class Main : MonoBehaviour
 
         damageSystem = new DamageSystem(gameEvent, objectPool, movement);
         // カード
-        cardSelectSystem = new CardSelectSystem(gameEvent, movement, objectPool, player, enemy, trash.transform);
+        cardSelectSystem = new CardSelectSystem(gameEvent, movement, objectPool, player, enemy, trash.transform, effectRoot);
         deckSystem = new DeckSystem(gameEvent);
         drawSystem = new DrawSystem(gameEvent);
-        handsSystem = new HandsSystem(gameEvent, player, deck.transform);
+        handsSystem = new HandsSystem(gameEvent, objectPool, player, deck.transform);
         // UI
         hitPointUISystem = new HitPointUISystem(gameEvent);
         manaUISystem = new ManaUISystem(gameEvent);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,12 +7,14 @@ public class HandsSystem
 {
     private GameObject playerObject;
     private GameEvent gameEvent = null;
+    private ObjectPool objectPool = null;
     private Transform deckTransform = null;
     private List<HandsComponent> handsList = new List<HandsComponent>();
 
-    public HandsSystem(GameEvent gameEvent, GameObject player, Transform deckTransform)
+    public HandsSystem(GameEvent gameEvent, ObjectPool objectPool, GameObject player, Transform deckTransform)
     {
         this.gameEvent = gameEvent;
+        this.objectPool = objectPool;
         playerObject = player;
         this.deckTransform = deckTransform;
         gameEvent.AddComponentList += AddComponentList;
@@ -20,18 +23,17 @@ public class HandsSystem
 
     private void Initialize(HandsComponent hands)
     {
-        for (int i = 0; i < hands.CardList.Count; i++)
-        {
-            CardBaseComponent card = hands.CardList[i];
-            gameEvent.AddComponentList?.Invoke(card.gameObject);
-            DrawEffectComponent drawEffect = card.gameObject.GetComponent<DrawEffectComponent>();
-            drawEffect.EndPosition = card.transform.position;
-            drawEffect.EndRotation = hands.transform.rotation;
-            drawEffect.StartPosition = deckTransform.position;
-            card.transform.position = deckTransform.position;
-            card.transform.rotation = hands.transform.rotation;
-            card.transform.localScale = new Vector3(0, 0, 0);
-        }
+        hands.NowHandsCardCount = 5;
+        // for (int i = 0; i < hands.CardList.Count; i++)
+        // {
+        //     CardBaseComponent card = hands.CardList[i];
+        //     gameEvent.AddComponentList?.Invoke(card.gameObject);
+        //     DrawEffectComponent drawEffect = card.gameObject.GetComponent<DrawEffectComponent>();
+        //     drawEffect.StartPosition = deckTransform.gameObject.GetComponent<RectTransform>().anchoredPosition3D;
+        //     card.transform.position = drawEffect.StartPosition;
+        //     card.transform.rotation = hands.transform.rotation;
+        //     card.transform.localScale = new Vector3(0, 0, 0);
+        // }
     }
 
     public void OnUpdate()
@@ -53,11 +55,19 @@ public class HandsSystem
 
             hands.DrawEffectTimer += Time.deltaTime;
             if (hands.DrawEffectTimer < hands.DrawEffectLimitTime) continue;
+            if (hands.CardList.Count > 0 && hands.CardList.Count >= hands.NowHandsCardCount)
+            {
+                Debug.Log("count : " + hands.DrawCount);
+
+                Debug.Log(hands.CardList[hands.DrawCount].gameObject.name);
+                gameEvent.ReleaseObject(hands.CardList[hands.DrawCount].gameObject);
+                Debug.Log("Release : " + hands.CardList[hands.DrawCount].gameObject.name);
+            }
             DrawCard(hands);
             hands.DrawCount++;
             hands.DrawEffectTimer = 0.0f;
 
-            if (hands.DrawCount != hands.CardList.Count) continue;
+            if (hands.DrawCount < hands.NowHandsCardCount) continue;
             hands.DrawCount = 0;
             turn.TurnState = TurnState.Play;
             Debug.Log(turn.gameObject.name + "Battle phase");
@@ -69,19 +79,47 @@ public class HandsSystem
         List<CardBaseComponent> cardList = gameEvent.Draw();
         for (int i = 0; i < cardList.Count; i++)
         {
-            hands.CardList[hands.DrawCount].CostPoint = cardList[i].CostPoint;
-            hands.CardList[hands.DrawCount].AttackPoint = cardList[i].AttackPoint;
-            hands.CardList[hands.DrawCount].Title = cardList[i].Title;
-            hands.CardList[hands.DrawCount].Description = cardList[i].Description;
+            GameObject cardObject = objectPool.GetGameObject(hands.CardPrefab);
+            cardObject.transform.SetParent(hands.CardRoot.transform);
+            RectTransform rectTransform = cardObject.GetComponent<RectTransform>();
+            rectTransform.anchoredPosition3D = deckTransform.gameObject.GetComponent<RectTransform>().anchoredPosition3D;
+            rectTransform.rotation = hands.transform.rotation;
+            rectTransform.localScale = new Vector3(0, 0, 0);
+            CardBaseComponent card = cardObject.GetComponent<CardBaseComponent>();
+            if (objectPool.IsNewCreate)
+            {
+                hands.CardList.Add(card);
+                Debug.Log("Create : " + hands.CardList.Count);
+                gameEvent.AddComponentList?.Invoke(card.gameObject);
+                objectPool.IsNewCreate = false;
+            }
 
-            hands.CardList[hands.DrawCount].CostPointText.text = cardList[i].CostPoint.ToString();
-            hands.CardList[hands.DrawCount].TitleText.text = cardList[i].Title;
-            hands.CardList[hands.DrawCount].DescriptionText.text = cardList[i].Description;
+            card.CostPoint = cardList[i].CostPoint;
+            card.AttackPoint = cardList[i].AttackPoint;
+            card.Title = cardList[i].Title;
+            card.Description = cardList[i].Description;
 
-            hands.CardList[hands.DrawCount].gameObject.SetActive(true);
-            hands.CardList[hands.DrawCount].transform.position = deckTransform.position;
+            card.CostPointText.text = cardList[i].CostPoint.ToString();
+            card.TitleText.text = cardList[i].Title;
+            card.DescriptionText.text = cardList[i].Description;
 
-            DrawEffectComponent drawEffect = hands.CardList[hands.DrawCount].gameObject.GetComponent<DrawEffectComponent>();
+            DrawEffectComponent drawEffect = card.gameObject.GetComponent<DrawEffectComponent>();
+            drawEffect.StartPosition = deckTransform.gameObject.GetComponent<RectTransform>().anchoredPosition3D;
+            Vector3 tempPosition = drawEffect.EndPosition;
+            float mag_y = Mathf.Abs(hands.DrawCount - Mathf.Floor(hands.NowHandsCardCount / 2.0f));
+            tempPosition.x = hands.Distance * hands.DrawCount - Mathf.Floor(hands.NowHandsCardCount / 2.0f) * hands.Distance;
+            tempPosition.y = hands.BaseHeight - hands.Height * mag_y - hands.Height * Mathf.Max(0, mag_y + mag_y - 1.0f);
+            tempPosition.z = 0.0f;
+            drawEffect.EndPosition = tempPosition;
+
+            Quaternion tempRotation = Quaternion.identity;
+            tempRotation.eulerAngles = new Vector3(0, 0, -hands.Angle * hands.DrawCount + Mathf.Floor(hands.NowHandsCardCount / 2.0f) * hands.Angle);
+            drawEffect.EndRotation = tempRotation;
+
+            CardSelectComponent cardSelect = card.GetComponent<CardSelectComponent>();
+            cardSelect.BasePosition = drawEffect.EndPosition;
+            cardSelect.BaseRotation = drawEffect.EndRotation;
+
             hands.DrawEffectList.Add(DrawEffect(drawEffect));
         }
     }
@@ -92,13 +130,14 @@ public class HandsSystem
         {
             drawEffect.Timer += Time.deltaTime;
             float ratio = drawEffect.Timer / drawEffect.LimitTime;
-            drawEffect.transform.position = Vector3.Lerp(drawEffect.StartPosition, drawEffect.EndPosition, ratio);
-            drawEffect.transform.rotation = Quaternion.Lerp(drawEffect.transform.rotation, drawEffect.EndRotation, ratio);
-            drawEffect.transform.localScale = Vector3.Lerp(new Vector3(0, 0, 0), new Vector3(3, 3, 3), ratio);
+            RectTransform rectTransform = drawEffect.GetComponent<RectTransform>();
+            rectTransform.anchoredPosition3D = Vector3.Lerp(drawEffect.StartPosition, drawEffect.EndPosition, ratio);
+            rectTransform.rotation = Quaternion.Lerp(drawEffect.transform.rotation, drawEffect.EndRotation, ratio);
+            rectTransform.localScale = Vector3.Lerp(new Vector3(0, 0, 0), new Vector3(3, 3, 3), ratio);
 
             if (drawEffect.Timer >= drawEffect.LimitTime)
             {
-                drawEffect.transform.position = drawEffect.EndPosition;
+                rectTransform.anchoredPosition3D = drawEffect.EndPosition;
                 drawEffect.transform.rotation = drawEffect.EndRotation;
                 drawEffect.transform.localScale = new Vector3(3, 3, 3);
                 drawEffect.Timer = 0;
