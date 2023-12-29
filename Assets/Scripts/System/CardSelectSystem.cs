@@ -13,11 +13,12 @@ public class CardSelectSystem
     private ObjectPool objectPool;
     private Transform trashTransform;
     private GameObject effectRoot;
+    private GameObject enemyTurnManagerObject;
     private List<CardSelectComponent> cardSelectList = new List<CardSelectComponent>();
     private List<CardBaseComponent> cardBaseList = new List<CardBaseComponent>();
     private int picUpCardIndex = -1;
 
-    public CardSelectSystem(GameEvent gameEvent, Movement movement, ObjectPool objectPool, GameObject player, GameObject enemy, Transform trash, GameObject effectRoot)
+    public CardSelectSystem(GameEvent gameEvent, Movement movement, ObjectPool objectPool, GameObject player, GameObject enemy, Transform trash, GameObject effectRoot, GameObject enemyTurnManager)
     {
         this.gameEvent = gameEvent;
         this.movement = movement;
@@ -26,6 +27,7 @@ public class CardSelectSystem
         this.enemyObject = enemy;
         this.trashTransform = trash;
         this.effectRoot = effectRoot;
+        this.enemyTurnManagerObject = enemyTurnManager;
         gameEvent.AddComponentList += AddComponentList;
         gameEvent.RemoveComponentList += RemoveComponentList;
     }
@@ -96,7 +98,31 @@ public class CardSelectSystem
             CharacterBaseComponent characterBase = playerObject.GetComponentInParent<CharacterBaseComponent>();
 
             if (characterBase.ManaPoint < cardBase.CostPoint) continue;
-            DamageComponent damage = enemyObject.GetComponent<DamageComponent>();
+            List<GameObject> enemyObjectList = new List<GameObject>();
+            enemyTurnManagerObject.GetComponent<EnemyTurnManagerComponent>().EnemyTurnComponentList.ForEach(x =>
+            {
+                enemyObjectList.Add(x.gameObject);
+            });
+
+            float nearDistance = 0.0f;
+            int nearIndex = 0;
+            for (int j = 0; j < enemyObjectList.Count; j++)
+            {
+                Vector3 enemyPosition = Camera.main.WorldToScreenPoint(enemyObjectList[j].transform.position) - new Vector3(Screen.width / 2, Screen.height / 2, 0);
+                float distance = Vector3.Distance(cardSelect.LiftPosition, enemyPosition);
+
+                if (j == 0)
+                {
+                    nearDistance = distance;
+                    continue;
+                }
+
+                if (nearDistance < distance) continue;
+                nearDistance = distance;
+                nearIndex = j;
+            }
+
+            DamageComponent damage = enemyObjectList[nearIndex].GetComponent<DamageComponent>();
             damage.DamagePoint = characterBase.AttackPoint * cardBase.AttackPoint;
             GenerateAttackEffect(cardSelect);
             characterBase.ManaPoint -= cardBase.CostPoint;
